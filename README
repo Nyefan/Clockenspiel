@@ -1,0 +1,6 @@
+This framework is under construction; further abstraction is still necessary to meet my expectations, and more
+functionality will continue to be moved into the actual timing classes as time goes on.  Until the release of
+1.0.0, assume that api breaking changes will be common.
+
+That said, an example of how to use the timer as it stands is located in the com.nyefan.clockenspiel.example
+for the curious
