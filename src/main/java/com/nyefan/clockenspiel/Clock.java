@@ -102,6 +102,8 @@ public class Clock {
         executorService.invokeAll(tasks, TIMEOUT_LENGTH, TIMEOUT_UNIT);
         end = Instant.now();
 
+        executorService.shutdown();
+
         return Duration.between(start, end);
     }
 
