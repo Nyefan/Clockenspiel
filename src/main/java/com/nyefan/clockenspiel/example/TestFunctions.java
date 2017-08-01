@@ -3,7 +3,6 @@ package com.nyefan.clockenspiel.example;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SignatureException;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Optional;
 
 /**
  * @author nyefan
@@ -48,22 +46,22 @@ public class TestFunctions {
                 .compact();
     }
 
-    public static Optional<Jwt> verifyToken(String token, PublicKey publicKey) {
-        if (!Jwts.parser().isSigned(token)) {
-            throw new UnsignedTokenException();
-        }
+    public static Jwt verifyToken(String token, PublicKey publicKey) {
+//        if (!Jwts.parser().isSigned(token)) {
+//            LOGGER.error("Token {} is not signed", token);
+//            return Optional.empty();
+//        }
 
-        try {
-            Jwt parsedToken = Jwts.parser().setSigningKey(publicKey).parse(token);
-            return Optional.of(parsedToken);
-        } catch (SignatureException se) {
-            LOGGER.error(String.format("Token %s was not signed with the private key matching public key: %s", token, publicKey.toString()), se);
-        }
-
-        return Optional.empty();
-    }
-
-    public static class UnsignedTokenException extends IllegalArgumentException {
-        private static final long serialVersionUID = 8873095048434114460L;
+//        try {
+//            Jwt parsedToken = Jwts.parser().setSigningKey(publicKey).parse(token);
+//            return Optional.of(parsedToken);
+//        } catch (SignatureException se) {
+//            LOGGER.error(String.format("Token %s was not signed with the private key matching public key: %s", token, publicKey.toString()), se);
+//        }
+//
+//        return Optional.empty();
+        return Jwts.parser()
+                .setSigningKey(publicKey)
+                .parse(token);
     }
 }
