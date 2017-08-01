@@ -3,6 +3,8 @@ package com.nyefan.clockenspiel.example;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.crypto.DefaultJwtSignatureValidator;
+import io.jsonwebtoken.impl.crypto.JwtSignatureValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +49,8 @@ public class TestFunctions {
     }
 
     public static Jwt verifyToken(String token, PublicKey publicKey) {
+
+
 //        if (!Jwts.parser().isSigned(token)) {
 //            LOGGER.error("Token {} is not signed", token);
 //            return Optional.empty();
@@ -63,5 +67,11 @@ public class TestFunctions {
         return Jwts.parser()
                 .setSigningKey(publicKey)
                 .parse(token);
+    }
+
+    public static boolean validateToken(String token, PublicKey publicKey, SignatureAlgorithm signatureAlgorithm) {
+        String jwtWithoutSignature = token.substring(0, token.lastIndexOf('.'));
+        JwtSignatureValidator validator = new DefaultJwtSignatureValidator(signatureAlgorithm, publicKey);
+        return validator.isValid(jwtWithoutSignature, token.substring(token.lastIndexOf('.')+1));
     }
 }

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import static com.nyefan.clockenspiel.example.TestFunctions.decrypt;
 import static com.nyefan.clockenspiel.example.TestFunctions.encrypt;
 import static com.nyefan.clockenspiel.example.TestFunctions.signJWT;
+import static com.nyefan.clockenspiel.example.TestFunctions.validateToken;
 import static com.nyefan.clockenspiel.example.TestFunctions.verifyToken;
 
 /**
@@ -35,15 +36,19 @@ public class PerformanceTest {
 
     public static void main(String... args) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
+        // These shouldn't actually be run sequentially;
+        // Because they use similar code paths, running one will optimize the other;
+        // This will result in misleading metrics.
         Clock timer = new Clock.ClockBuilder().setThreadPoolSize(16).setIterationsPerCycle(100_000).build();
         perfTestEncrypt(timer);
         perfTestDecrypt(timer);
-        timer = new Clock.ClockBuilder().setThreadPoolSize(16).setIterationsPerCycle(10_000).build();
-        perfTestSignJWT(timer);
-        perfTestVerifyJWT(timer);
+        Clock timer2 = new Clock.ClockBuilder().setThreadPoolSize(16).setIterationsPerCycle(10_000).build();
+        perfTestSignJWT(timer2);
+        perfTestVerifyJWT(timer2);
+        perfTestValidateJWT(timer2);
     }
 
-    private static void perfTestEncrypt(Clock timer) throws Exception {
+    public static void perfTestEncrypt(Clock timer) throws Exception {
         String testName = "perfTestEncrypt";
         Callable<Callable<byte[]>> generator = () -> {
             String payload = RANDOM.ints(65L).boxed().map(Integer::toHexString).collect(Collectors.joining());
@@ -56,10 +61,11 @@ public class PerformanceTest {
 
             return tryCatchMethod(() -> encrypt(keyString, payloadBytes), testName);
         };
+
         List<Duration> results = timer.time(generator, testName);
     }
 
-    private static void perfTestDecrypt(Clock timer) throws Exception {
+    public static void perfTestDecrypt(Clock timer) throws Exception {
         String testName = "perfTestDecrypt";
         Callable<Callable<byte[]>> generator = () -> {
             String payload      = RANDOM.ints(65L).boxed().map(Integer::toHexString).collect(Collectors.joining());
@@ -73,10 +79,11 @@ public class PerformanceTest {
 
             return tryCatchMethod(() -> decrypt(keyString, encryptedPayload), testName);
         };
+
         List<Duration> results = timer.time(generator, testName);
     }
 
-    private static void perfTestSignJWT(Clock timer) throws Exception {
+    public static void perfTestSignJWT(Clock timer) throws Exception {
         String testName = "perfTestSignJWT";
         Callable<Callable<String>> generator = () -> {
 
@@ -86,10 +93,11 @@ public class PerformanceTest {
 
             return tryCatchMethod(() -> signJWT(payload, privateKey, signatureAlgorithm), testName);
         };
+
         List<Duration> results = timer.time(generator, testName);
     }
 
-    private static void perfTestVerifyJWT(Clock timer) throws Exception {
+    public static void perfTestVerifyJWT(Clock timer) throws Exception {
         String testName = "perfTestVerifyJWT";
         Callable<Callable<Jwt>> generator = () -> {
             String             payload            = RANDOM.ints(65L).boxed().map(Integer::toHexString).collect(Collectors.joining());
@@ -101,6 +109,24 @@ public class PerformanceTest {
 
             return tryCatchMethod(() -> verifyToken(token, publicKey), testName);
         };
+
+        List<Duration> results = timer.time(generator, testName);
+    }
+
+    public static void perfTestValidateJWT(Clock timer) throws Exception {
+        String testName = "perfTestValidateJWT";
+        Callable<Callable<Boolean>> generator = () -> {
+            String payload = RANDOM.ints(65L).boxed().map(Integer::toHexString).collect(Collectors.joining());
+
+            final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.ES256;
+            KeyPair                  keyPair            = EllipticCurveProvider.generateKeyPair(signatureAlgorithm);
+
+            final PublicKey publicKey = keyPair.getPublic();
+            final String    token     = signJWT(payload, keyPair.getPrivate(), signatureAlgorithm);
+
+            return tryCatchMethod(() -> validateToken(token, publicKey, signatureAlgorithm), testName);
+        };
+
         List<Duration> results = timer.time(generator, testName);
     }
 
